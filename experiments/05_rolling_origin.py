@@ -1,10 +1,11 @@
 """Experiment 05 — rolling-origin (walk-forward) robustness.
 
-The single-split result in exp 02 answers "is the calibration good on one held-out
-window?". This asks the harder question a reviewer will: "is it robust to *where*
-we split?" We walk an expanding training window forward across BTC history,
-re-fit all five models at each step, and evaluate coverage on the next block. If
-the headline conclusion is real it should hold across folds, not just one.
+The single-split results in exp 02/03 answer "is the calibration good on one
+held-out window?". This asks the harder question a reviewer will: "is it robust to
+*where* we split?" For each dataset we walk an expanding training window forward,
+re-fit all five models at each step, and evaluate coverage on the next block. If a
+conclusion is real it should hold across folds, not just one — and we run it on
+BOTH datasets so BTC and AAPL get the same single-split and cross-split treatment.
 """
 from __future__ import annotations
 
@@ -30,17 +31,15 @@ ROOT = Path(__file__).resolve().parents[1]
 TABLES = ROOT / "results" / "tables"
 FIGURES = ROOT / "results" / "figures"
 
-START = "2015-01-01"
 END = "2026-07-01"
 N_FOLDS = 8
 MIN_TRAIN_FRAC = 0.4
 MODELS = ["Gaussian", "EWMA-Gaussian", "Laplace", "Student-t", "Empirical"]
 
 
-def main(refresh: bool = False):
-    prices = D.fetch_prices("BTC-USD", start=START, end=END, use_cache=not refresh)
-    returns = D.compute_log_returns(prices["Close"])
-    X, y = D.build_ar_features(returns, lags=3)
+def run_rolling(X: np.ndarray, y: np.ndarray, dataset_name: str, epochs: int = 2000):
+    """Walk-forward evaluation on one dataset: summary table + coverage-across-folds
+    figure. Returns the summary DataFrame."""
     n = len(y)
     min_train = int(MIN_TRAIN_FRAC * n)
     test_size = (n - min_train) // N_FOLDS
@@ -48,11 +47,11 @@ def main(refresh: bool = False):
     cov = {m: {lv: [] for lv in LEVELS} for m in MODELS}
     rejects = {m: {lv: 0 for lv in LEVELS} for m in MODELS}
 
-    print(f"Walk-forward on BTC: {N_FOLDS} expanding folds, test block ~{test_size} days each\n")
+    print(f"\n=== {dataset_name}: {N_FOLDS} expanding folds, test block ~{test_size} obs each ===")
     for i in range(N_FOLDS):
         tr_end = min_train + i * test_size
         te_end = tr_end + test_size
-        models, yte, _ = fit_models(X[:te_end], y[:te_end], tr_end, epochs=2000)
+        models, yte, _ = fit_models(X[:te_end], y[:te_end], tr_end, epochs=epochs)
         for name, interval_fn in models.items():
             for lv in LEVELS:
                 lo, hi = interval_fn(lv)
@@ -76,9 +75,10 @@ def main(refresh: bool = False):
     summary = pd.DataFrame.from_dict(rows, orient="index")
     summary.columns = pd.MultiIndex.from_tuples(summary.columns, names=["level", "metric"])
 
+    slug = dataset_name.lower().replace(" ", "_")
     TABLES.mkdir(parents=True, exist_ok=True)
-    summary.to_csv(TABLES / "btc_rolling_coverage.csv")
-    print("\nRolling coverage summary (mean/std over folds, Kupiec rejections at 5%):")
+    summary.to_csv(TABLES / f"{slug}_rolling_coverage.csv")
+    print(f"\n{dataset_name} rolling coverage (mean/std over folds, Kupiec rejections at 5%):")
     print(summary.to_string())
 
     # --- Plot: coverage across folds at 95% and 99% ---
@@ -96,20 +96,37 @@ def main(refresh: bool = False):
         ax.axhline(lv, ls="--", color="#999999", lw=1.3, label="nominal")
         ax.set_xlabel("rolling fold (expanding train window →)")
         ax.set_ylabel("empirical coverage")
-        ax.set_title(f"BTC: {int(lv * 100)}% coverage across folds")
+        ax.set_title(f"{dataset_name}: {int(lv * 100)}% coverage across folds")
         ax.set_xticks(folds)
     axes[1].legend(title="model", bbox_to_anchor=(1.02, 1), loc="upper left")
-    fig.suptitle("Rolling-origin calibration robustness — BTC", fontsize=15, fontweight="bold")
+    fig.suptitle(f"Rolling-origin calibration robustness — {dataset_name}",
+                 fontsize=15, fontweight="bold")
     fig.tight_layout()
     FIGURES.mkdir(parents=True, exist_ok=True)
-    out = FIGURES / "btc_rolling_coverage.png"
+    out = FIGURES / f"{slug}_rolling_coverage.png"
     fig.savefig(out)
     plt.close(fig)
-    print(f"\nRolling-coverage plot written to {out}")
+    print(f"{dataset_name} rolling-coverage plot written to {out}")
+    return summary
+
+
+def main(refresh: bool = False):
+    cache = not refresh
+
+    # BTC — AR(3) + |r| features on daily log returns.
+    btc = D.compute_log_returns(D.fetch_prices("BTC-USD", "2015-01-01", END, use_cache=cache)["Close"])
+    Xb, yb = D.build_ar_features(btc, lags=3)
+    run_rolling(Xb, yb, "BTC")
+
+    # AAPL-on-SPY — market-model regression, residual = idiosyncratic return.
+    aapl = D.compute_log_returns(D.fetch_prices("AAPL", "2010-01-01", END, use_cache=cache)["Close"])
+    spy = D.compute_log_returns(D.fetch_prices("SPY", "2010-01-01", END, use_cache=cache)["Close"])
+    Xa, ya = D.build_market_model(aapl, spy)
+    run_rolling(Xa, ya, "AAPL")
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="BTC rolling-origin robustness experiment")
+    ap = argparse.ArgumentParser(description="Rolling-origin robustness on BTC and AAPL")
     ap.add_argument("--refresh", action="store_true",
                     help="re-pull the latest data from Yahoo instead of using the cache")
     main(refresh=ap.parse_args().refresh)

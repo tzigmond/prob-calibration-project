@@ -145,14 +145,16 @@ clustering, so getting the *shape* right is what pays off.
 across all levels, while EWMA-Gaussian drops below it (under-covers) at 95% and
 99%.*
 
-### 4.2 Cross-split: rolling-origin on BTC
+### 4.2 Cross-split: rolling-origin
 
-The BTC result in §3 rests on a single chronological split. To test whether it is
-robust to *where* we split, an expanding training window is walked forward across
-BTC history in 8 folds (`experiments/05`), re-fitting all five models at each step
-and evaluating coverage on the next ~314-day block.
+The §3 and §4.1 results each rest on a single chronological split. To test whether
+they are robust to *where* we split, an expanding training window is walked forward
+in 8 folds for **each** dataset (`experiments/05`), re-fitting all five models per
+fold and evaluating coverage on the next block (~314 obs for BTC, ~311 for AAPL).
 
-| Model | 90% mean cov (± std) | Kupiec rejects @90% | 95% mean cov | rejects @95% | 99% rejects |
+**BTC** (mean coverage ± std over folds; Kupiec rejections at the 5% level):
+
+| Model | 90% mean cov (± std) | rejects @90% | 95% mean cov | rejects @95% | 99% rejects |
 |---|---|---|---|---|---|
 | Gaussian | 0.947 (±0.027) | 6/8 | 0.969 | 4/8 | 2/8 |
 | **EWMA-Gaussian** | **0.897 (±0.010)** | **0/8** | **0.934** | **2/8** | 8/8 |
@@ -162,18 +164,31 @@ and evaluating coverage on the next ~314-day block.
 
 ![BTC rolling-origin calibration robustness](figures/btc_rolling_coverage.png)
 
-Two things hold up and one new caveat appears:
+**AAPL-on-SPY:**
 
-- **The §3 conclusion is robust, not a lucky split.** EWMA-Gaussian is the
-  best-calibrated model at 90% in *every* fold (0/8 rejections) and has by far the
-  **lowest fold-to-fold variance** (±0.010 vs ±0.027–0.035) — it is both the most
-  accurate and the most *stable* across split points.
-- **But no model is well-calibrated at 99%.** EWMA-Gaussian under-covers the 99%
-  interval in all 8 folds (Gaussian tails stay too thin in the extreme even after
-  volatility scaling), while the heavy-tailed models over-cover. The right answer
-  in the deep tail is neither fixed-scale-heavy-tail nor scaled-Gaussian — it is a
-  model with *both* time-varying scale *and* a heavy conditional tail, i.e. GARCH
-  with a conditional Student-*t* (see §7).
+| Model | 90% mean cov (± std) | rejects @90% | 95% mean cov | rejects @95% | 99% rejects |
+|---|---|---|---|---|---|
+| Gaussian | 0.928 (±0.029) | 5/8 | 0.956 | 5/8 | 2/8 |
+| **EWMA-Gaussian** | **0.902 (±0.013)** | **0/8** | **0.932** | **2/8** | 7/8 |
+| Laplace | 0.921 (±0.031) | 3/8 | 0.962 | 6/8 | **0/8** |
+| Student-*t* | 0.906 (±0.033) | 5/8 | 0.955 | 4/8 | **0/8** |
+| Empirical | 0.910 (±0.032) | 4/8 | 0.954 | 4/8 | **0/8** |
+
+![AAPL-on-SPY rolling-origin calibration robustness](figures/aapl_rolling_coverage.png)
+
+The cross-split view **confirms** the dataset-dependent story rather than softening
+it:
+
+- **At 90%, volatility scaling is the most reliable on both datasets.**
+  EWMA-Gaussian is the only model with 0/8 rejections at 90% on *both* BTC and
+  AAPL, with 2–3× smaller fold-to-fold variance than any competitor — the most
+  accurate *and* the most stable, independent of the split point.
+- **In the deep tail the two datasets diverge, and do so consistently across all
+  folds.** On AAPL the genuine heavy tail means Laplace, Student-*t*, and Empirical
+  calibrate the 99% interval in *every* fold (0/8 rejections); on BTC *no* model
+  does — EWMA under-covers (8/8) and the heavy-tailed laws over-cover. The BTC 99%
+  tail wants time-varying scale *and* a heavy conditional tail at once — i.e. GARCH
+  with a conditional Student-*t* (§7).
 
 ---
 

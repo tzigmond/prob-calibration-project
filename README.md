@@ -165,7 +165,7 @@ prob-calibration-project/
 │   ├── 02_btc_primary.py            # The core result: coverage/width table + diagnostics
 │   ├── 03_aapl_robustness.py        # Cross-asset generalization on AAPL-on-SPY
 │   ├── 04_optimizer_convergence.py  # Sanity check across all four optimizers
-│   └── 05_rolling_origin.py         # Cross-split robustness (walk-forward on BTC)
+│   └── 05_rolling_origin.py         # Cross-split robustness (walk-forward, BTC + AAPL)
 ├── tests/                # 32 pytest tests (run in CI)
 ├── notebooks/            # Exploration only
 ├── results/              # Generated tables and figures (build output)
