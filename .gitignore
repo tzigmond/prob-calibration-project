@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environment
+venv/
+.venv/
+
+# Cached data pulls (data.py writes yfinance CSVs here)
+results/*.csv
+
+# Generated figures
+results/figures/*.png
+
+# OS / editor
+.DS_Store
+.vscode/
+.ipynb_checkpoints/
