@@ -44,10 +44,16 @@ The load-bearing evaluation module:
 - assembles the centerpiece coverage/width table
 
 ## diagnostics.py
-Distributional goodness-of-fit checks: standardized-residual histograms with
-fitted densities overlaid, Q-Q plots, and tail-probability comparisons
-P(|z|>2), P(|z|>3), P(|z|>4). Confirms the assumption fits, not just that
-intervals happened to cover.
+Distributional goodness-of-fit checks and the headline calibration visual:
+standardized-residual histograms (x-clipped for readability) with fitted
+densities overlaid, Q-Q plots, tail-probability comparisons P(|z|>2,3,4), and
+`plot_calibration` — the reliability diagram (coverage vs. nominal with binomial
+CIs and the perfect-calibration diagonal) alongside a sharpness/width panel.
+
+## plotstyle.py
+The shared house style — a `use_house_style()` rcParams helper and a per-model
+color `PALETTE` — so every figure reads as one consistent system. Deliberately
+2D: for calibration curves and densities, clean 2D communicates better than 3D.
 
 ## data.py
 Data acquisition and feature construction:

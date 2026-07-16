@@ -84,8 +84,12 @@ def run_study(
     }
     slug = dataset_name.lower().replace(" ", "_")
     D.plot_residual_hist(resid_tr, fitted, figures_dir / f"{slug}_residual_hist.png")
-    D.qq_plot(resid_tr, stats.t(df=nu, scale=unit_t_scale), figures_dir / f"{slug}_qq_studentt.png")
-    D.qq_plot(resid_tr, stats.norm(0, 1), figures_dir / f"{slug}_qq_normal.png")
+    D.qq_plot(resid_tr, stats.t(df=nu, scale=unit_t_scale),
+              figures_dir / f"{slug}_qq_studentt.png",
+              title=f"{dataset_name}: Q-Q vs Student-t(nu={nu:.1f})")
+    D.qq_plot(resid_tr, stats.norm(0, 1), figures_dir / f"{slug}_qq_normal.png",
+              title=f"{dataset_name}: Q-Q vs Normal")
+    D.plot_calibration(table, dataset_name, figures_dir / f"{slug}_calibration.png")
     tails = D.tail_probabilities(resid_tr, fitted)
 
     meta = {

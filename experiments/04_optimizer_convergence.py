@@ -7,7 +7,9 @@ non-convex in the weights, so different optimizers can settle at slightly
 different points from the same OLS start.
 
 This is a sanity check, not a second experiment — it confirms the headline result
-isn't an artifact of choosing Adam.
+isn't an artifact of choosing Adam. The convergence *trajectory* is plotted on a
+synthetic well-conditioned problem, because daily returns are too weakly
+predictable for the loss to show a meaningful descent.
 """
 from __future__ import annotations
 
@@ -26,6 +28,7 @@ from src import data as D
 from src import optimizers as O
 from src.losses import GaussianLoss, StudentTLoss, estimate_nu
 from src.train import fit
+from src.plotstyle import use_house_style
 
 ROOT = Path(__file__).resolve().parents[1]
 FIGURES = ROOT / "results" / "figures"
@@ -46,11 +49,14 @@ def main():
     }
 
     print("Gaussian loss (convex) — optimizers should converge to the same weights:")
+    # Initialize AWAY from the optimum (default init is OLS, i.e. already minimal)
+    # so the convergence trace shows an actual descent to compare.
+    w0 = np.zeros(Xtr.shape[1])
     histories = {}
     gauss_weights = {}
     for name, opt in optimizers.items():
         bs = None if name == "BatchGD" else 256
-        res = fit(Xtr, ytr, GaussianLoss(), opt, epochs=2000, batch_size=bs, seed=0)
+        res = fit(Xtr, ytr, GaussianLoss(), opt, epochs=2000, batch_size=bs, w_init=w0, seed=0)
         histories[name] = res.loss_history
         gauss_weights[name] = res.weights
         print(f"  {name:10s} final loss={res.loss_history[-1]:.3e}  weights={np.round(res.weights, 5)}")
@@ -95,25 +101,51 @@ def main():
     spread_t = max(float(np.max(np.abs(w - ref_t))) for w in t_weights.values())
     print(f"  -> max weight spread (non-convex, larger than the convex case): {spread_t:.2e}")
 
-    # Convergence-trajectory plot for the Gaussian loss.
+    # Convergence-trajectory plot on a WELL-CONDITIONED SYNTHETIC problem.
+    # Daily returns carry almost no predictable signal, so the Gaussian loss is
+    # nearly flat in the weights (predicting zero is almost as good as the
+    # optimum) — a descent curve is only meaningful where the optimum sits far
+    # from the origin. This isolates optimizer *speed*, which the BTC checks
+    # above (agreement at the optimum) cannot show.
+    print("\nConvergence trajectory plotted on a synthetic well-conditioned problem\n"
+          "(BTC returns are too weakly predictable to show a meaningful descent).")
+    rng = np.random.default_rng(0)
+    ns, ds = 4000, 5
+    Xs = np.column_stack([np.ones(ns), rng.standard_normal((ns, ds))])
+    ws = rng.standard_normal(ds + 1)
+    ys = Xs @ ws + rng.normal(0, 0.5, ns)
+    w0s = np.zeros(ds + 1)
+    demo_opts = {
+        "BatchGD":  O.BatchGD(lr=0.05),
+        "SGD":      O.SGD(lr=0.02),
+        "Momentum": O.Momentum(lr=0.02),
+        "Adam":     O.Adam(lr=0.05),
+    }
+    demo_hist = {}
+    for name, opt in demo_opts.items():
+        bs = None if name == "BatchGD" else 256
+        demo_hist[name] = fit(Xs, ys, GaussianLoss(), opt, epochs=200,
+                              batch_size=bs, w_init=w0s, seed=0).loss_history
+
     import matplotlib
     matplotlib.use("Agg")
+    use_house_style()
     import matplotlib.pyplot as plt
 
+    colors = {"BatchGD": "#4C72B0", "SGD": "#DD8452", "Momentum": "#55A868", "Adam": "#C44E52"}
     FIGURES.mkdir(parents=True, exist_ok=True)
-    fig, ax = plt.subplots(figsize=(8, 5))
-    for name, hist in histories.items():
-        ax.plot(hist, label=name, lw=1.4)
+    fig, ax = plt.subplots()
+    for name, hist in demo_hist.items():
+        ax.plot(hist, label=name, color=colors.get(name), lw=2.0)
     ax.set_yscale("log")
     ax.set_xlabel("epoch")
     ax.set_ylabel("Gaussian loss (MSE)")
-    ax.set_title("Optimizer convergence — Gaussian loss on BTC")
-    ax.legend()
-    fig.tight_layout()
+    ax.set_title("Optimizer convergence — synthetic well-conditioned problem")
+    ax.legend(title="optimizer")
     out = FIGURES / "optimizer_convergence.png"
-    fig.savefig(out, dpi=150)
+    fig.savefig(out)
     plt.close(fig)
-    print(f"\nConvergence plot written to {out}")
+    print(f"Convergence plot written to {out}")
 
 
 if __name__ == "__main__":

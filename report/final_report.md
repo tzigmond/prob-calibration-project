@@ -90,6 +90,13 @@ Two findings stand out:
    narrower than every fixed-variance competitor. On BTC, adapting the *scale* to
    local volatility matters far more than adapting the *shape* of the error law.
 
+![BTC interval calibration](figures/btc_calibration.png)
+
+*Reliability (left): EWMA-Gaussian tracks the perfect-calibration diagonal while
+every fixed-variance model sits above it (over-covers). Sharpness (right):
+EWMA-Gaussian is the narrowest at every level, while the Student-t interval
+balloons at 99%.*
+
 **Tail diagnostics** confirm the mechanism. Standardized-residual tail masses:
 
 | | empirical | Normal | Laplace | *t*(ν=2.1) |
@@ -97,6 +104,8 @@ Two findings stand out:
 | P(│z│>2) | 0.058 | 0.046 | 0.059 | 0.008 |
 | P(│z│>3) | 0.016 | 0.003 | 0.014 | 0.003 |
 | P(│z│>4) | 0.006 | 0.000 | 0.004 | 0.002 |
+
+![BTC standardized residuals vs. fitted densities](figures/btc_residual_hist.png)
 
 The *unconditional* residual distribution looks like a *t* with ν ≈ 2 (variance
 barely finite) — exactly what a **Gaussian scale mixture** (a Gaussian whose
@@ -128,6 +137,12 @@ tail diagnostics explain why: with ν ≈ 3.6, the *t* marginal tail masses (0.0
 this is a genuine heavy tail, not one manufactured by extreme volatility
 clustering, so getting the *shape* right is what pays off.
 
+![AAPL-on-SPY interval calibration](figures/aapl_calibration.png)
+
+*The story flips relative to BTC: Student-t and Empirical stay on the diagonal
+across all levels, while EWMA-Gaussian drops below it (under-covers) at 95% and
+99%.*
+
 ---
 
 ## 5. Optimizer convergence (sanity check)
@@ -144,6 +159,13 @@ OLS initialization: the redescending, **non-convex** objective is genuinely more
 sensitive to the optimizer and step size. (An earlier run with the convex-loss
 learning rates let Momentum walk out of the OLS basin entirely — reducing the
 rate fixes it, and the residual spread then reflects curvature, not divergence.)
+
+![Optimizer convergence on a synthetic well-conditioned problem](figures/optimizer_convergence.png)
+
+*Convergence is shown on a synthetic well-conditioned problem — daily returns are
+too weakly predictable for the loss to descend visibly. Full-batch gradient
+descent converges smoothly over ~30 epochs; the mini-batch methods reach the
+optimum within a few.*
 
 ---
 

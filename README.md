@@ -16,6 +16,13 @@ the derivation alone can't answer:
 > produce better-calibrated prediction intervals — or does an apparent advantage
 > just reflect volatility clustering that a simpler model captures too?**
 
+![BTC interval calibration](report/figures/btc_calibration.png)
+
+*The headline figure: on BTC, a one-parameter EWMA volatility-scaled Gaussian
+(orange) hugs the perfect-calibration diagonal and is the sharpest model, while
+every fixed-variance competitor over-covers. On AAPL the answer flips — see the
+[full report](report/final_report.md).*
+
 ---
 
 ## The core correspondence
@@ -211,6 +218,13 @@ Stated up front so they read as deliberate, not missed:
 - [x] AAPL-on-SPY robustness check (experiment 03)
 - [x] Optimizer-convergence sanity check (experiment 04)
 - [x] Final writeup (`report/final_report.md`)
+- [x] Test suite (32 tests) + GitHub Actions CI
+- [x] Reliability/calibration figures + house plot style
+- [x] Exploratory notebook
+
+**Extensions (not started):** a GARCH conditional-variance model with a
+conditional Student-*t* — the BTC-vs-AAPL contrast is a direct motivation — and
+joint estimation of ν with the weights.
 
 **Headline finding:** which model calibrates best depends on the asset's tail
 regime. On **BTC** (ν ≈ 2, extreme volatility clustering) a one-parameter EWMA
