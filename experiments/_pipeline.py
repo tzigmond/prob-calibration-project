@@ -21,6 +21,52 @@ from src import diagnostics as D
 LEVELS = [0.90, 0.95, 0.99]
 
 
+def fit_models(X: np.ndarray, y: np.ndarray, split: int, epochs: int = 3000, lr: float = 0.01):
+    """Fit the five models on X[:split] and build their interval closures on the
+    test block X[split:]. Returns (models, y_test, info) where ``models`` maps a
+    name to ``interval_fn(level) -> (lower, upper)`` and ``info`` carries nu and
+    the training residuals for diagnostics. Reused by both the single-split study
+    and the rolling-origin evaluation.
+    """
+    Xtr, ytr, Xte, yte = X[:split], y[:split], X[split:], y[split:]
+
+    # --- Point model: least-squares mean (shared by Gaussian/EWMA/Empirical) ---
+    gauss = GaussianLoss()
+    w_g = fit(Xtr, ytr, gauss, O.Adam(lr=lr), epochs=epochs, seed=0).weights
+    preds_te = Xte @ w_g
+    resid_tr = ytr - Xtr @ w_g
+    sigma = gauss.estimate_scale(resid_tr)
+
+    # EWMA σ_t over the full residual series; take the test slice (no lookahead).
+    # Seed σ²_0 from the TRAIN variance only, so the test period is never peeked at.
+    resid_full = y - X @ w_g
+    seed_var = float(np.var(resid_full[:split]))
+    sigma_t = I.ewma_volatility(resid_full, seed_var=seed_var)[split:]
+
+    # --- Laplace model (its own weights + scale) ---
+    lap = LaplaceLoss()
+    w_l = fit(Xtr, ytr, lap, O.Adam(lr=lr), epochs=epochs, seed=0).weights
+    preds_l = Xte @ w_l
+    b = lap.estimate_scale(ytr - Xtr @ w_l)
+
+    # --- Student-t model: estimate ν on OLS residuals, hold fixed ---
+    nu = estimate_nu(resid_tr)
+    tloss = StudentTLoss(nu=nu)
+    tloss.scale = tloss.estimate_scale(resid_tr)
+    w_t = fit(Xtr, ytr, tloss, O.Adam(lr=lr), epochs=epochs, seed=0).weights
+    preds_t = Xte @ w_t
+    scale_t = tloss.estimate_scale(ytr - Xtr @ w_t)
+
+    models = {
+        "Gaussian":      lambda lv: I.gaussian_interval(preds_te, sigma, lv),
+        "EWMA-Gaussian": lambda lv: I.ewma_scaled_gaussian_interval(preds_te, sigma_t, lv),
+        "Laplace":       lambda lv: I.laplace_interval(preds_l, b, lv),
+        "Student-t":     lambda lv: I.student_t_interval(preds_t, scale_t, nu, lv),
+        "Empirical":     lambda lv: I.empirical_interval(preds_te, resid_tr, lv),
+    }
+    return models, yte, {"nu": nu, "resid_tr": resid_tr}
+
+
 def run_study(
     X: np.ndarray,
     y: np.ndarray,
@@ -37,42 +83,9 @@ def run_study(
     figures_dir = Path(figures_dir)
     figures_dir.mkdir(parents=True, exist_ok=True)
     split = int(len(y) * train_frac)
-    Xtr, ytr, Xte, yte = X[:split], y[:split], X[split:], y[split:]
 
-    # --- Point model: least-squares mean (shared by Gaussian/EWMA/Empirical) ---
-    gauss = GaussianLoss()
-    w_g = fit(Xtr, ytr, gauss, O.Adam(lr=lr), epochs=epochs).weights
-    preds_te = Xte @ w_g
-    resid_tr = ytr - Xtr @ w_g
-    sigma = gauss.estimate_scale(resid_tr)
-
-    # EWMA σ_t over the full residual series; take the test slice (no lookahead).
-    # Seed σ²_0 from the TRAIN variance only, so the test period is never peeked at.
-    resid_full = y - X @ w_g
-    seed_var = float(np.var(resid_full[:split]))
-    sigma_t = I.ewma_volatility(resid_full, seed_var=seed_var)[split:]
-
-    # --- Laplace model (its own weights + scale) ---
-    lap = LaplaceLoss()
-    w_l = fit(Xtr, ytr, lap, O.Adam(lr=lr), epochs=epochs).weights
-    preds_l = Xte @ w_l
-    b = lap.estimate_scale(ytr - Xtr @ w_l)
-
-    # --- Student-t model: estimate ν on OLS residuals, hold fixed ---
-    nu = estimate_nu(resid_tr)
-    tloss = StudentTLoss(nu=nu)
-    tloss.scale = tloss.estimate_scale(resid_tr)
-    w_t = fit(Xtr, ytr, tloss, O.Adam(lr=lr), epochs=epochs).weights
-    preds_t = Xte @ w_t
-    scale_t = tloss.estimate_scale(ytr - Xtr @ w_t)
-
-    models = {
-        "Gaussian":      lambda lv: I.gaussian_interval(preds_te, sigma, lv),
-        "EWMA-Gaussian": lambda lv: I.ewma_scaled_gaussian_interval(preds_te, sigma_t, lv),
-        "Laplace":       lambda lv: I.laplace_interval(preds_l, b, lv),
-        "Student-t":     lambda lv: I.student_t_interval(preds_t, scale_t, nu, lv),
-        "Empirical":     lambda lv: I.empirical_interval(preds_te, resid_tr, lv),
-    }
+    models, yte, info = fit_models(X, y, split, epochs=epochs, lr=lr)
+    nu, resid_tr = info["nu"], info["resid_tr"]
     table = C.coverage_table(yte, models, LEVELS)
 
     # --- Diagnostics on standardized Gaussian residuals (unit-variance overlays) ---

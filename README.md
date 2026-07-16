@@ -1,5 +1,8 @@
 # From Likelihood to Loss
 
+[![CI](https://github.com/tzigmond/prob-calibration-project/actions/workflows/ci.yml/badge.svg)](https://github.com/tzigmond/prob-calibration-project/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **Gradient descent under competing probabilistic assumptions — and whether the
 assumption you pick actually changes the calibration of your predictions.**
 
@@ -22,6 +25,16 @@ the derivation alone can't answer:
 (orange) hugs the perfect-calibration diagonal and is the sharpest model, while
 every fixed-variance competitor over-covers. On AAPL the answer flips — see the
 [full report](report/final_report.md).*
+
+### Results at a glance
+
+| Dataset | est. ν | Excess kurtosis | Best-calibrated model | 95% coverage (nominal 0.95) | Takeaway |
+|---|---|---|---|---|---|
+| **BTC-USD** | 2.1 | 11.7 | **EWMA-Gaussian** (only model not Kupiec-rejected) | 0.937, and sharpest (width 0.095) | Fat tail ≈ volatility clustering; scale the variance |
+| **AAPL-on-SPY** | 3.6 | 7.6 | **Student-*t*** / **Empirical** (calibrated at all levels) | 0.947 | Genuine per-observation heavy tail; shape matters |
+
+*Held-out test sets of ~830 points each, chronological split. Full tables with
+binomial CIs and Kupiec p-values are in the [report](report/final_report.md).*
 
 ---
 
@@ -145,12 +158,15 @@ prob-calibration-project/
 │   ├── train.py          # Generic fit loop — the one place a loss meets an optimizer
 │   ├── intervals.py      # Five interval builders (incl. EWMA-scaled and empirical)
 │   ├── calibration.py    # Coverage, width, binomial CI, Kupiec test, centerpiece table
-│   └── diagnostics.py    # Residual histograms, Q-Q plots, tail probabilities
+│   ├── diagnostics.py    # Residual histograms, Q-Q, tail probs, reliability plot
+│   └── plotstyle.py      # Shared house style + per-model color palette
 ├── experiments/          # Runnable orchestration scripts, each reads top-to-bottom as a narrative
 │   ├── 01_synthetic_validation.py   # Recover known coefficients — the gate before real data
 │   ├── 02_btc_primary.py            # The core result: coverage/width table + diagnostics
-│   ├── 03_aapl_robustness.py        # Generalization check on AAPL-on-SPY
-│   └── 04_optimizer_convergence.py  # Sanity check across all four optimizers
+│   ├── 03_aapl_robustness.py        # Cross-asset generalization on AAPL-on-SPY
+│   ├── 04_optimizer_convergence.py  # Sanity check across all four optimizers
+│   └── 05_rolling_origin.py         # Cross-split robustness (walk-forward on BTC)
+├── tests/                # 32 pytest tests (run in CI)
 ├── notebooks/            # Exploration only
 ├── results/              # Generated tables and figures (build output)
 └── report/               # Final writeup
@@ -217,6 +233,7 @@ Stated up front so they read as deliberate, not missed:
 - [x] BTC primary result — coverage/width table + diagnostics (experiment 02)
 - [x] AAPL-on-SPY robustness check (experiment 03)
 - [x] Optimizer-convergence sanity check (experiment 04)
+- [x] Rolling-origin robustness — walk-forward across splits (experiment 05)
 - [x] Final writeup (`report/final_report.md`)
 - [x] Test suite (32 tests) + GitHub Actions CI
 - [x] Reliability/calibration figures + house plot style

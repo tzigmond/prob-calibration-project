@@ -115,7 +115,9 @@ both calibration and sharpness is strong evidence that BTC's fat marginal tail i
 
 ---
 
-## 4. Robustness: AAPL-on-SPY
+## 4. Robustness
+
+### 4.1 Cross-asset: AAPL-on-SPY
 
 Market-model regression of AAPL returns on SPY, 2010–2026 (train 3316, test 830).
 Estimated **ν = 3.62**, excess kurtosis **7.64**.
@@ -142,6 +144,36 @@ clustering, so getting the *shape* right is what pays off.
 *The story flips relative to BTC: Student-t and Empirical stay on the diagonal
 across all levels, while EWMA-Gaussian drops below it (under-covers) at 95% and
 99%.*
+
+### 4.2 Cross-split: rolling-origin on BTC
+
+The BTC result in §3 rests on a single chronological split. To test whether it is
+robust to *where* we split, an expanding training window is walked forward across
+BTC history in 8 folds (`experiments/05`), re-fitting all five models at each step
+and evaluating coverage on the next ~314-day block.
+
+| Model | 90% mean cov (± std) | Kupiec rejects @90% | 95% mean cov | rejects @95% | 99% rejects |
+|---|---|---|---|---|---|
+| Gaussian | 0.947 (±0.027) | 6/8 | 0.969 | 4/8 | 2/8 |
+| **EWMA-Gaussian** | **0.897 (±0.010)** | **0/8** | **0.934** | **2/8** | 8/8 |
+| Laplace | 0.929 (±0.035) | 5/8 | 0.966 | 4/8 | 2/8 |
+| Student-*t* | 0.927 (±0.035) | 5/8 | 0.975 | 5/8 | 7/8 |
+| Empirical | 0.940 (±0.030) | 5/8 | 0.975 | 4/8 | 3/8 |
+
+![BTC rolling-origin calibration robustness](figures/btc_rolling_coverage.png)
+
+Two things hold up and one new caveat appears:
+
+- **The §3 conclusion is robust, not a lucky split.** EWMA-Gaussian is the
+  best-calibrated model at 90% in *every* fold (0/8 rejections) and has by far the
+  **lowest fold-to-fold variance** (±0.010 vs ±0.027–0.035) — it is both the most
+  accurate and the most *stable* across split points.
+- **But no model is well-calibrated at 99%.** EWMA-Gaussian under-covers the 99%
+  interval in all 8 folds (Gaussian tails stay too thin in the extreme even after
+  volatility scaling), while the heavy-tailed models over-cover. The right answer
+  in the deep tail is neither fixed-scale-heavy-tail nor scaled-Gaussian — it is a
+  model with *both* time-varying scale *and* a heavy conditional tail, i.e. GARCH
+  with a conditional Student-*t* (see §7).
 
 ---
 
