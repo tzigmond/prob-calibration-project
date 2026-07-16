@@ -20,6 +20,13 @@ class FitResult:
     loss_history: list[float]
 
 
+def _ols_init(X: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Least-squares solution — the shared starting point for all optimizers so
+    the non-convex Student-t fits are comparable."""
+    w, *_ = np.linalg.lstsq(X, y, rcond=None)
+    return w
+
+
 def fit(
     X: np.ndarray,
     y: np.ndarray,
@@ -32,12 +39,37 @@ def fit(
 ) -> FitResult:
     """Couple ``loss`` to ``optimizer`` and run gradient descent.
 
-    Loop: for each epoch (and mini-batch, if ``batch_size`` is set), ask
+    Loop: each epoch (and mini-batch, if ``batch_size`` is set), ask
     ``loss.gradient`` for gradients, hand them to ``optimizer.step``, record
     ``loss.loss``. Returns fitted weights + the loss trajectory.
 
-    ``w_init`` defaults to the OLS solution upstream so that the non-convex
-    Student-t fits are comparable across optimizers (shared starting point).
-    ``tol`` optionally enables early stopping on loss-change.
+    ``w_init`` defaults to the OLS solution so non-convex Student-t fits are
+    comparable across optimizers. ``tol`` optionally early-stops on the absolute
+    change in full-dataset loss between epochs.
     """
-    raise NotImplementedError
+    w = _ols_init(X, y) if w_init is None else np.array(w_init, dtype=float)
+    optimizer.reset()
+
+    n = len(y)
+    loss_history: list[float] = []
+    prev_loss: float | None = None
+
+    for _ in range(epochs):
+        if batch_size is None:
+            grads = loss.gradient(X, y, w)
+            w = optimizer.step(w, grads)
+        else:
+            order = np.random.permutation(n)
+            for start in range(0, n, batch_size):
+                idx = order[start:start + batch_size]
+                grads = loss.gradient(X[idx], y[idx], w)
+                w = optimizer.step(w, grads)
+
+        current = loss.loss(X, y, w)
+        loss_history.append(current)
+
+        if tol is not None and prev_loss is not None and abs(prev_loss - current) < tol:
+            break
+        prev_loss = current
+
+    return FitResult(weights=w, loss_history=loss_history)

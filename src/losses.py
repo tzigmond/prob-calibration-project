@@ -9,6 +9,8 @@ out per model.
 Gaussian NLL (up to constants) == MSE. Laplace NLL == MAE. Student-t NLL is the
 heavy-tailed one; its ``nu`` is FIXED at construction (from ``estimate_nu``) and
 never optimized here.
+
+Convention: for a linear model, residual r = X @ w - y (prediction minus target).
 """
 from __future__ import annotations
 
@@ -35,33 +37,34 @@ class GaussianLoss(Loss):
     """Gaussian errors -> MSE. Gradient is the standard Xᵀ(Xw - y) form."""
 
     def loss(self, X, y, w):
-        # mean( (X@w - y)**2 )   (Gaussian NLL up to additive/scale constants)
-        raise NotImplementedError
+        r = X @ w - y
+        return float(np.mean(r ** 2))
 
     def gradient(self, X, y, w):
-        # (2/n) * X.T @ (X@w - y)
-        raise NotImplementedError
+        r = X @ w - y
+        return (2.0 / len(y)) * (X.T @ r)
 
     def estimate_scale(self, residuals):
-        # σ = std of residuals (MLE up to bias)
-        raise NotImplementedError
+        # σ = MLE standard deviation of residuals
+        return float(np.std(residuals))
 
 
 class LaplaceLoss(Loss):
     """Laplace errors -> MAE. Non-differentiable at zero; we take subgradient=0
-    there (documented interview point — keep this an explicit, commented line)."""
+    there (documented interview point)."""
 
     def loss(self, X, y, w):
-        # mean( |X@w - y| )
-        raise NotImplementedError
+        r = X @ w - y
+        return float(np.mean(np.abs(r)))
 
     def gradient(self, X, y, w):
-        # (1/n) * X.T @ sign(X@w - y)   with sign(0) := 0  (subgradient choice)
-        raise NotImplementedError
+        r = X @ w - y
+        # np.sign gives sign(0) == 0 — exactly the subgradient choice we want.
+        return (1.0 / len(y)) * (X.T @ np.sign(r))
 
     def estimate_scale(self, residuals):
         # Laplace MLE scale b = mean(|residuals - median|)
-        raise NotImplementedError
+        return float(np.mean(np.abs(residuals - np.median(residuals))))
 
 
 class StudentTLoss(Loss):
@@ -77,18 +80,19 @@ class StudentTLoss(Loss):
         self.scale = scale  # may be refreshed via estimate_scale before intervals
 
     def loss(self, X, y, w):
-        # sum of -log t_pdf((X@w - y)/scale; nu) / scale, up to constants
-        raise NotImplementedError
+        r = X @ w - y
+        # True scaled-t NLL (constants included via scipy for correctness).
+        return float(-np.mean(stats.t.logpdf(r, df=self.nu, scale=self.scale)))
 
     def gradient(self, X, y, w):
-        # r = X@w - y
-        # weight = (nu + 1) * r / (nu * scale**2 + r**2)
-        # grad = (1/n) * X.T @ weight
-        raise NotImplementedError
+        r = X @ w - y
+        weight = (self.nu + 1.0) * r / (self.nu * self.scale ** 2 + r ** 2)
+        return (1.0 / len(y)) * (X.T @ weight)
 
     def estimate_scale(self, residuals):
-        # scale from scipy.stats.t.fit with df fixed to self.nu (keep scale only)
-        raise NotImplementedError
+        # Fit scale with df fixed to self.nu and location pinned at 0.
+        _, _, scale = stats.t.fit(residuals, f0=self.nu, floc=0.0)
+        return float(scale)
 
 
 def estimate_nu(residuals: np.ndarray) -> float:
@@ -98,5 +102,5 @@ def estimate_nu(residuals: np.ndarray) -> float:
     returned nu is then baked into ``StudentTLoss(nu=...)`` and held fixed.
     Keep df only here — scale is re-estimated per model via ``estimate_scale``.
     """
-    # df, loc, scale = scipy.stats.t.fit(residuals); return df
-    raise NotImplementedError
+    df, _, _ = stats.t.fit(residuals)
+    return float(df)

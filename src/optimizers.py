@@ -23,7 +23,6 @@ class Optimizer:
 
     def reset(self) -> None:
         """Clear internal state (velocity, moments, timestep) for a fresh run."""
-        # Stateless optimizers override with a no-op; stateful ones clear here.
         pass
 
 
@@ -34,8 +33,7 @@ class BatchGD(Optimizer):
         self.lr = lr
 
     def step(self, params, grads):
-        # params <- params - lr * grads
-        raise NotImplementedError
+        return params - self.lr * grads
 
 
 class SGD(Optimizer):
@@ -46,8 +44,7 @@ class SGD(Optimizer):
         self.lr = lr
 
     def step(self, params, grads):
-        # params <- params - lr * grads   (grads computed on a mini-batch upstream)
-        raise NotImplementedError
+        return params - self.lr * grads
 
 
 class Momentum(Optimizer):
@@ -59,8 +56,10 @@ class Momentum(Optimizer):
         self.velocity: np.ndarray | None = None  # lazily shaped to params
 
     def step(self, params, grads):
-        # v <- beta * v + grads ; params <- params - lr * v
-        raise NotImplementedError
+        if self.velocity is None:
+            self.velocity = np.zeros_like(params)
+        self.velocity = self.beta * self.velocity + grads
+        return params - self.lr * self.velocity
 
     def reset(self):
         self.velocity = None
@@ -81,12 +80,15 @@ class Adam(Optimizer):
         self.t: int = 0
 
     def step(self, params, grads):
-        # t += 1
-        # m <- beta1*m + (1-beta1)*grads
-        # v <- beta2*v + (1-beta2)*grads**2
-        # m_hat = m/(1-beta1**t) ; v_hat = v/(1-beta2**t)
-        # params <- params - lr * m_hat / (sqrt(v_hat) + eps)
-        raise NotImplementedError
+        if self.m is None:
+            self.m = np.zeros_like(params)
+            self.v = np.zeros_like(params)
+        self.t += 1
+        self.m = self.beta1 * self.m + (1 - self.beta1) * grads
+        self.v = self.beta2 * self.v + (1 - self.beta2) * grads ** 2
+        m_hat = self.m / (1 - self.beta1 ** self.t)
+        v_hat = self.v / (1 - self.beta2 ** self.t)
+        return params - self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
 
     def reset(self):
         self.m = None
