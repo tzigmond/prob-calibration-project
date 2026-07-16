@@ -8,11 +8,13 @@ __pycache__/
 venv/
 .venv/
 
-# Cached data pulls (data.py writes yfinance CSVs here)
+# Generated build artifacts under results/ (regenerable — keep only the README)
+# cached yfinance pulls
 results/*.csv
-
-# Generated figures
-results/figures/*.png
+# coverage / tail tables
+results/tables/
+# diagnostic + convergence plots
+results/figures/
 
 # OS / editor
 .DS_Store
