@@ -193,9 +193,15 @@ Stated up front so they read as deliberate, not missed:
 
 ## Roadmap
 
-- [ ] `src/` library implementations (stubs in place)
-- [ ] Synthetic-recovery validation (experiment 01)
-- [ ] BTC primary result — coverage/width table + diagnostics (experiment 02)
-- [ ] AAPL-on-SPY robustness check (experiment 03)
-- [ ] Optimizer-convergence sanity check (experiment 04)
-- [ ] Final writeup
+- [x] `src/` library implementations
+- [x] Synthetic-recovery validation (experiment 01)
+- [x] BTC primary result — coverage/width table + diagnostics (experiment 02)
+- [x] AAPL-on-SPY robustness check (experiment 03)
+- [x] Optimizer-convergence sanity check (experiment 04)
+- [x] Final writeup (`report/final_report.md`)
+
+**Headline finding:** on both BTC and AAPL-on-SPY, a one-parameter EWMA
+volatility-scaled Gaussian is the best-calibrated *and* sharpest interval model —
+beating the fixed Gaussian, Laplace, Student-*t*, and empirical baselines. Much
+of the apparent heavy tail in returns is volatility clustering rather than a
+genuine per-observation heavy tail. See the report for the full analysis.
