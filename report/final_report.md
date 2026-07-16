@@ -49,110 +49,133 @@ coefficients $w^\star=[0.5,-1.2,2.0,0.7]$ and confirmed recovery
 | Student-*t* | Adam (ν fixed) | 0.013 | ν̂ = 4.52 vs ν = 4.0 |
 
 All optimizers recover the Gaussian coefficients; the separately-estimated ν
-matches truth. The math and the machinery are sound.
+matches truth. The math and the machinery are sound. A committed test suite
+(`tests/`, 32 tests) additionally gradient-checks every loss, verifies the
+optimizers against the closed-form and scikit-learn solutions, and checks the
+Wilson CI, Kupiec test, and the EWMA no-lookahead property.
+
+*Data windows below are pinned for reproducibility (`--refresh` re-pulls the
+latest); results are as of the 2026-07 snapshot.*
 
 ---
 
 ## 3. Primary result: BTC-USD daily log returns
 
-Data: BTC-USD 2015–2025, daily log returns, AR(3)+|r| features, chronological
-80/20 split (train 2919, test 730). Estimated **ν = 2.13**, residual **excess
-kurtosis = 11.1** — the documented heavy tail is present.
+Data: BTC-USD 2015–2026, daily log returns, AR(3)+|r| features, chronological
+80/20 split (train 3356, test 839). Estimated **ν = 2.07**, residual **excess
+kurtosis = 11.7** — the documented heavy tail is present.
 
 **Coverage (nominal) / average width, held-out test set:**
 
-| Model | 90% cov | 95% cov | 99% cov | width @95% | Kupiec @90% |
+| Model | 90% cov | 95% cov | 99% cov | width @95% | Kupiec 90% / 95% |
 |---|---|---|---|---|---|
-| Gaussian (fixed σ) | 0.968 | 0.984 | 0.999 | 0.152 | reject |
-| **EWMA-Gaussian** | **0.885** | 0.919 | 0.958 | **0.096** | **p = 0.18 (ok)** |
-| Laplace | 0.952 | 0.981 | 1.000 | 0.150 | reject |
-| Student-*t* | 0.952 | 0.988 | 1.000 | 0.162 | reject |
-| Empirical | 0.962 | 0.986 | 1.000 | 0.164 | reject |
+| Gaussian (fixed σ) | 0.969 | 0.985 | 0.996 | 0.145 | reject / reject |
+| **EWMA-Gaussian** | **0.894** | **0.937** | 0.968 | **0.095** | **0.56 / 0.09 (ok)** |
+| Laplace | 0.958 | 0.983 | 0.998 | 0.143 | reject / reject |
+| Student-*t* | 0.957 | 0.988 | 1.000 | 0.156 | reject / reject |
+| Empirical | 0.967 | 0.988 | 0.999 | 0.158 | reject / reject |
 
 Two findings stand out:
 
 1. **The fixed-variance models over-cover and are wide.** The chronological test
-   window (2023–2024) is calmer than the training era (2017–2021), so a single
-   fixed σ estimated on the training period produces intervals that are too fat
-   for the test period. This is the opposite of the naive "heavy tails ⇒
-   under-coverage" intuition, and it is a direct consequence of holding the
-   variance model fixed across a volatility regime shift.
+   window is calmer than the training era, so a single fixed σ estimated on the
+   training period produces intervals too fat for the test period — the opposite
+   of the naive "heavy tails ⇒ under-coverage" intuition, and a direct
+   consequence of holding the variance model fixed across a volatility regime
+   shift. The Student-*t* at ν ≈ 2 is the most extreme: its 99% interval is 0.35
+   wide (vs 0.19 for the fixed Gaussian) and covers 100% of points.
 
 2. **The volatility-scaled Gaussian dominates.** EWMA-Gaussian is the only model
-   whose 90% coverage is not rejected by the Kupiec test, and its intervals are
-   ~40% narrower than the fixed Gaussian's at every level. Adapting the *scale*
-   to local volatility matters far more than adapting the *shape* of the error
-   law.
+   not rejected by the Kupiec test at 90% *and* 95%, and its intervals are ~35%
+   narrower than every fixed-variance competitor. On BTC, adapting the *scale* to
+   local volatility matters far more than adapting the *shape* of the error law.
 
 **Tail diagnostics** confirm the mechanism. Standardized-residual tail masses:
 
 | | empirical | Normal | Laplace | *t*(ν=2.1) |
 |---|---|---|---|---|
-| P(│z│>2) | 0.057 | 0.046 | 0.059 | 0.012 |
-| P(│z│>3) | 0.016 | 0.003 | 0.014 | 0.005 |
-| P(│z│>4) | 0.006 | 0.000 | 0.004 | 0.003 |
+| P(│z│>2) | 0.058 | 0.046 | 0.059 | 0.008 |
+| P(│z│>3) | 0.016 | 0.003 | 0.014 | 0.003 |
+| P(│z│>4) | 0.006 | 0.000 | 0.004 | 0.002 |
 
 The *unconditional* residual distribution looks like a *t* with ν ≈ 2 (variance
-barely finite). But a *t*(2) fitted to the marginal is exactly what a
-**Gaussian scale mixture** — a Gaussian whose variance changes over time —
-produces. The fact that a single EWMA volatility step recovers calibration and
-sharpness is strong evidence that BTC's fat marginal tail is **substantially
-volatility clustering, not a genuine per-observation heavy tail**.
+barely finite) — exactly what a **Gaussian scale mixture** (a Gaussian whose
+variance changes over time) produces. That a single EWMA volatility step recovers
+both calibration and sharpness is strong evidence that BTC's fat marginal tail is
+**substantially volatility clustering, not a genuine per-observation heavy tail**.
 
 ---
 
 ## 4. Robustness: AAPL-on-SPY
 
-Market-model regression of AAPL returns on SPY, 2010–2025 (train 3018, test 755).
-Estimated **ν = 3.62**, excess kurtosis **7.79**.
+Market-model regression of AAPL returns on SPY, 2010–2026 (train 3316, test 830).
+Estimated **ν = 3.62**, excess kurtosis **7.64**.
 
-| Model | 90% cov (Kupiec) | 95% cov (Kupiec) | width @95% |
-|---|---|---|---|
-| Gaussian (fixed σ) | 0.956 (reject) | 0.970 (reject) | 0.052 |
-| **EWMA-Gaussian** | **0.905 (p=0.67)** | **0.938 (p=0.14)** | **0.041** |
-| Laplace | 0.954 (reject) | 0.977 (reject) | 0.056 |
-| Student-*t* | 0.936 (reject) | 0.970 (reject) | 0.052 |
-| Empirical | 0.942 (reject) | 0.968 (reject) | 0.052 |
+| Model | 90% cov (Kupiec) | 95% cov (Kupiec) | 99% cov (Kupiec) | width @95% |
+|---|---|---|---|---|
+| Gaussian (fixed σ) | 0.923 (reject) | 0.946 (0.58 ok) | 0.977 (reject) | 0.051 |
+| EWMA-Gaussian | 0.906 (0.56 ok) | 0.933 (reject) | 0.967 (reject) | **0.045** |
+| Laplace | 0.919 (0.06) | 0.955 (0.47 ok) | 0.990 (0.92 ok) | 0.055 |
+| **Student-*t*** | **0.901 (0.91 ok)** | **0.947 (0.69 ok)** | **0.993 (0.40 ok)** | 0.052 |
+| **Empirical** | **0.906 (0.56 ok)** | **0.946 (0.58 ok)** | **0.992 (0.64 ok)** | 0.051 |
 
-The conclusion generalizes: **EWMA-Gaussian is again the best-calibrated and
-sharpest model**, non-rejected at both 90% and 95%. Here ν = 3.6 is less extreme
-and the *t*(3.6) marginal tail masses match the empirical ones closely — yet
-volatility scaling still wins on calibration, because the value is in the
-*conditional* variance, not the marginal shape.
+**Here the conclusion flips.** On AAPL, the **Student-*t*** and **empirical**
+models are well-calibrated at *every* level (no Kupiec rejection), while the
+EWMA-Gaussian — best on BTC — is well-calibrated only at 90% and **under-covers**
+at 95% and 99% (its intervals are too sharp once volatility is scaled out). The
+tail diagnostics explain why: with ν ≈ 3.6, the *t* marginal tail masses (0.046,
+0.014, 0.005) match the empirical ones (0.046, 0.015, 0.006) almost exactly —
+this is a genuine heavy tail, not one manufactured by extreme volatility
+clustering, so getting the *shape* right is what pays off.
 
 ---
 
 ## 5. Optimizer convergence (sanity check)
 
-On the convex Gaussian loss, all four from-scratch optimizers converge to the
-same weights (max spread 9.7 × 10⁻³) — the headline result is not an Adam
-artifact. On the Student-*t* loss the spread balloons to 1.6: from the shared OLS
-initialization the optimizers settle at different points, and Momentum in
-particular wanders. This is the **expected** signature of the non-convex,
-redescending *t* NLL, not a bug — and a reason to treat Student-*t* point
-estimates with more caution than the interval story requires.
+On the convex Gaussian loss, all four from-scratch optimizers reach **identical
+loss** (spread ≈ 6 × 10⁻⁶). The coefficient *weights* differ more (spread ≈ 2 ×
+10⁻²) — not a convergence failure but a property of the problem: daily returns
+are near-unpredictable, so the coefficients are weakly identified and the loss
+surface is flat in those directions. Loss agreement is the meaningful signal, and
+the headline result is not an Adam artifact.
+
+On the Student-*t* loss the weight spread is larger (≈ 0.23) even from a shared
+OLS initialization: the redescending, **non-convex** objective is genuinely more
+sensitive to the optimizer and step size. (An earlier run with the convex-loss
+learning rates let Momentum walk out of the OLS basin entirely — reducing the
+rate fixes it, and the residual spread then reflects curvature, not divergence.)
 
 ---
 
 ## 6. Conclusion
 
-The falsifiable hypothesis — that a Student-*t* error model yields
-better-calibrated intervals than a fixed-variance Gaussian — is only *weakly*
-supported, and for the wrong reason. The decisive factor on both datasets is not
-the *shape* of the error distribution but whether the model adapts its *scale* to
-local volatility. A one-parameter EWMA volatility step beats every fixed-variance
-model — Gaussian, Laplace, Student-*t*, and non-parametric alike — on both
-calibration and sharpness. Much of what looks like a heavy per-observation tail
-in crypto and equity returns is volatility clustering in disguise.
+The decisive factor for interval calibration is **not universally shape or
+scale — it depends on the asset's tail regime**, and the study's two-baseline
+design is what makes the distinction visible:
+
+- **BTC (ν ≈ 2, extreme volatility clustering).** A one-parameter EWMA
+  volatility-scaled Gaussian beats every fixed-variance model — Gaussian,
+  Laplace, Student-*t*, and empirical alike — on both calibration and sharpness.
+  Most of the apparent heavy tail is volatility clustering in disguise, and a
+  genuine heavy-tailed law (ν ≈ 2) over-covers wildly at high confidence.
+- **AAPL (ν ≈ 3.6, moderate tails).** A genuine Student-*t* and the
+  non-parametric empirical baseline are best-calibrated across all levels, while
+  volatility scaling alone under-covers at 95%+. Here the per-observation tail is
+  real, and getting the distributional *shape* right is what matters.
+
+So the falsifiable hypothesis — Student-*t* over fixed Gaussian — holds cleanly on
+AAPL but not on BTC, where volatility scaling is the better answer. The right
+model is the one matched to *why* the tail is heavy: conditional-variance
+dynamics (BTC) versus genuine per-observation tail weight (AAPL). Disentangling
+those two was the whole point.
 
 ---
 
 ## 7. Limitations and extensions
 
 - **Regime shift under the chronological split.** Holding σ fixed across a
-  train→test volatility change is what makes the fixed-variance models
-  over-cover. This is a faithful consequence of the fixed-variance scope, not an
-  error — but it means the fixed-Gaussian baseline is unflattering for a reason
+  train→test volatility change is what makes the fixed-variance models over-cover
+  on BTC. A faithful consequence of the fixed-variance scope, not an error, but
   worth stating plainly.
 - **ν estimated on unconditional residuals.** For BTC this yields ν ≈ 2.1, where
   the variance is barely finite, precisely because the unconditional residuals
@@ -161,7 +184,8 @@ in crypto and equity returns is volatility clustering in disguise.
 - **Fixed variance for four of five models.** Only the EWMA-Gaussian adapts its
   scale. A full **GARCH** conditional-variance model — combined with a
   conditional Student-*t* — is the natural next step and would properly separate
-  volatility dynamics from residual tail shape.
+  volatility dynamics from residual tail shape. The BTC-vs-AAPL contrast above is
+  a strong motivation for it.
 - **ν held fixed, estimated separately.** Joint estimation of ν and the weights
   is non-convex and poorly identified in finite samples; a deliberate scope
   choice, noted as an extension rather than a limitation of the finding.

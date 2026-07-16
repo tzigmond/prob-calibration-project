@@ -39,17 +39,25 @@ def gaussian_interval(
     return preds - half, preds + half
 
 
-def ewma_volatility(series: np.ndarray, lam: float = 0.94) -> np.ndarray:
+def ewma_volatility(
+    series: np.ndarray, lam: float = 0.94, seed_var: float | None = None
+) -> np.ndarray:
     """Trailing RiskMetrics EWMA volatility, one σ_t per point.
 
     σ²_t = lam * σ²_{t-1} + (1 - lam) * series_{t-1}²  — each σ_t depends only on
-    values strictly before t, so there is no lookahead. Seeded with the sample
-    variance of ``series``. ``series`` is returns or residuals; lam=0.94 is the
-    daily RiskMetrics default. Returns σ_t aligned to the input points.
+    values strictly before t, so there is no lookahead. ``lam=0.94`` is the daily
+    RiskMetrics default. ``series`` is returns or residuals.
+
+    ``seed_var`` seeds σ²_0. Pass the *training* variance to avoid peeking at the
+    test period; if omitted it defaults to the variance of ``series`` (a seed that
+    is fully decayed away long before any sizeable test slice, but strictly a peek).
     """
     series = np.asarray(series, dtype=float)
     var = np.empty(len(series))
-    v = float(np.var(series)) if len(series) else 0.0
+    if seed_var is not None:
+        v = float(seed_var)
+    else:
+        v = float(np.var(series)) if len(series) else 0.0
     for t in range(len(series)):
         var[t] = v                      # forecast for point t (uses only past)
         v = lam * v + (1.0 - lam) * series[t] ** 2

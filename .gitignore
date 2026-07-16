@@ -9,8 +9,9 @@ venv/
 .venv/
 
 # Generated build artifacts under results/ (regenerable — keep only the README)
-# cached yfinance pulls
+# cached yfinance pulls and their dated manifests
 results/*.csv
+results/*.meta.json
 # coverage / tail tables
 results/tables/
 # diagnostic + convergence plots

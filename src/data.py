@@ -6,6 +6,8 @@ survive yfinance outages.
 """
 from __future__ import annotations
 
+import json
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -14,13 +16,37 @@ import pandas as pd
 _CACHE_DIR = Path(__file__).resolve().parents[1] / "results"
 
 
-def fetch_prices(ticker: str, start: str, end: str, use_cache: bool = True) -> pd.DataFrame:
+def _write_manifest(ticker: str, df: pd.DataFrame, start: str, end: str) -> None:
+    """Stamp a pull with its date and window so a snapshot is always answerable
+    to the question 'as of when, and over what range?'."""
+    manifest = {
+        "ticker": ticker,
+        "pulled_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "requested_start": start,
+        "requested_end": end,
+        "rows": int(len(df)),
+        "first_date": str(df.index.min().date()) if len(df) else None,
+        "last_date": str(df.index.max().date()) if len(df) else None,
+        "source": "Yahoo Finance via yfinance",
+    }
+    (_CACHE_DIR / f"{ticker}.meta.json").write_text(json.dumps(manifest, indent=2))
+
+
+def fetch_prices(
+    ticker: str, start: str, end: str | None = None, use_cache: bool = True
+) -> pd.DataFrame:
     """Pull raw OHLCV from yfinance, caching to results/<ticker>.csv.
 
-    On a cache hit, read the CSV instead of re-hitting the API. Sanitize on the
-    way in: drop non-positive closes and duplicate dates, and sort by date, so a
-    single bad tick can't blow up a log return.
+    ``end`` defaults to today, so a plain call fetches up to the present. The
+    cache is keyed by ticker only (not by date window): on a cache hit the stored
+    CSV is returned as the pinned snapshot; pass ``use_cache=False`` to re-pull
+    the latest and overwrite it. Every live pull writes a dated manifest
+    (results/<ticker>.meta.json) recording the pull time and date range.
+
+    Sanitize on the way in: drop non-positive closes and duplicate dates, and
+    sort by date, so a single bad tick can't blow up a log return.
     """
+    end = end or date.today().isoformat()
     _CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache = _CACHE_DIR / f"{ticker}.csv"
 
@@ -33,6 +59,7 @@ def fetch_prices(ticker: str, start: str, end: str, use_cache: bool = True) -> p
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
         df.to_csv(cache)
+        _write_manifest(ticker, df, start, end)
 
     df = df[df["Close"] > 0]
     df = df[~df.index.duplicated(keep="first")]

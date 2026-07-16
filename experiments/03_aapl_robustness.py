@@ -7,6 +7,7 @@ quirks of one asset.
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -23,10 +24,15 @@ ROOT = Path(__file__).resolve().parents[1]
 TABLES = ROOT / "results" / "tables"
 FIGURES = ROOT / "results" / "figures"
 
+# Pinned window for reproducible reported results; --refresh re-pulls this window.
+START = "2010-01-01"
+END = "2026-07-01"
 
-def main():
-    aapl = D.compute_log_returns(D.fetch_prices("AAPL", "2010-01-01", "2025-01-01")["Close"])
-    spy = D.compute_log_returns(D.fetch_prices("SPY", "2010-01-01", "2025-01-01")["Close"])
+
+def main(refresh: bool = False):
+    cache = not refresh
+    aapl = D.compute_log_returns(D.fetch_prices("AAPL", START, END, use_cache=cache)["Close"])
+    spy = D.compute_log_returns(D.fetch_prices("SPY", START, END, use_cache=cache)["Close"])
     X, y = D.build_market_model(aapl, spy)
 
     table, tails, meta = run_study(X, y, dataset_name="AAPL", figures_dir=FIGURES)
@@ -45,4 +51,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser(description="AAPL-on-SPY interval-calibration experiment")
+    ap.add_argument("--refresh", action="store_true",
+                    help="re-pull the latest data from Yahoo instead of using the cache")
+    main(refresh=ap.parse_args().refresh)

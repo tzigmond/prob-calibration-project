@@ -52,12 +52,12 @@ def main():
     y = X @ w_true + rng.normal(0, 0.5, n)
     for opt in [O.BatchGD(lr=0.1), O.SGD(lr=0.05), O.Momentum(lr=0.05), O.Adam(lr=0.05)]:
         bs = None if isinstance(opt, O.BatchGD) else 256
-        w = fit(X, y, GaussianLoss(), opt, epochs=500, batch_size=bs).weights
+        w = fit(X, y, GaussianLoss(), opt, epochs=500, batch_size=bs, seed=0).weights
         ok &= check(type(opt).__name__, w_true, w)
 
     print("\nLaplace errors — Adam under MAE:")
     y = X @ w_true + rng.laplace(0, 0.4, n)
-    w = fit(X, y, LaplaceLoss(), O.Adam(lr=0.02), epochs=1000).weights
+    w = fit(X, y, LaplaceLoss(), O.Adam(lr=0.02), epochs=1000, seed=0).weights
     ok &= check("Adam", w_true, w)
 
     print("\nStudent-t errors — estimate nu separately, hold fixed, recover weights:")
@@ -67,7 +67,7 @@ def main():
     nu_hat = estimate_nu(y - X @ w_ols)
     tloss = StudentTLoss(nu=nu_hat)
     tloss.scale = tloss.estimate_scale(y - X @ w_ols)
-    w = fit(X, y, tloss, O.Adam(lr=0.02), epochs=1000).weights
+    w = fit(X, y, tloss, O.Adam(lr=0.02), epochs=1000, seed=0).weights
     ok &= check("Adam", w_true, w)
     nu_ok = abs(nu_hat - nu_true) < 1.5
     print(f"  [{'PASS' if nu_ok else 'FAIL'}] nu recovery          "

@@ -36,6 +36,7 @@ def fit(
     batch_size: int | None = None,
     w_init: np.ndarray | None = None,
     tol: float | None = None,
+    seed: int | None = None,
 ) -> FitResult:
     """Couple ``loss`` to ``optimizer`` and run gradient descent.
 
@@ -45,12 +46,14 @@ def fit(
 
     ``w_init`` defaults to the OLS solution so non-convex Student-t fits are
     comparable across optimizers. ``tol`` optionally early-stops on the absolute
-    change in full-dataset loss between epochs.
+    change in full-dataset loss between epochs. ``seed`` makes mini-batch
+    shuffling reproducible — pass it for any batched run you want to repeat.
     """
     w = _ols_init(X, y) if w_init is None else np.array(w_init, dtype=float)
     optimizer.reset()
 
     n = len(y)
+    rng = np.random.default_rng(seed)
     loss_history: list[float] = []
     prev_loss: float | None = None
 
@@ -59,7 +62,7 @@ def fit(
             grads = loss.gradient(X, y, w)
             w = optimizer.step(w, grads)
         else:
-            order = np.random.permutation(n)
+            order = rng.permutation(n)
             for start in range(0, n, batch_size):
                 idx = order[start:start + batch_size]
                 grads = loss.gradient(X[idx], y[idx], w)

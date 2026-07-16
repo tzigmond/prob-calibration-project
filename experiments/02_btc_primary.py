@@ -10,6 +10,7 @@ Student-t advantage survive the EWMA-Gaussian and empirical baselines?
 """
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -26,9 +27,13 @@ ROOT = Path(__file__).resolve().parents[1]
 TABLES = ROOT / "results" / "tables"
 FIGURES = ROOT / "results" / "figures"
 
+# Pinned window for reproducible reported results; --refresh re-pulls this window.
+START = "2015-01-01"
+END = "2026-07-01"
 
-def main():
-    prices = D.fetch_prices("BTC-USD", start="2015-01-01", end="2025-01-01")
+
+def main(refresh: bool = False):
+    prices = D.fetch_prices("BTC-USD", start=START, end=END, use_cache=not refresh)
     returns = D.compute_log_returns(prices["Close"])
     X, y = D.build_ar_features(returns, lags=3)
 
@@ -48,4 +53,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    ap = argparse.ArgumentParser(description="BTC interval-calibration experiment")
+    ap.add_argument("--refresh", action="store_true",
+                    help="re-pull the latest data from Yahoo instead of using the cache")
+    main(refresh=ap.parse_args().refresh)

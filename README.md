@@ -172,10 +172,22 @@ pip install -r requirements.txt
 Run an experiment from the project root, e.g.:
 
 ```powershell
-python experiments/02_btc_primary.py
+python experiments/02_btc_primary.py            # uses the cached data snapshot
+python experiments/02_btc_primary.py --refresh  # re-pull the latest from Yahoo
 ```
 
-Tables land in `results/tables/`, figures in `results/figures/`.
+Tables land in `results/tables/`, figures in `results/figures/`. Data pulls are
+cached to `results/<ticker>.csv` with a dated `.meta.json` manifest; the default
+run is reproducible from the cached snapshot, and `--refresh` re-pulls the pinned
+window up to the present.
+
+Run the test suite (32 tests — gradient checks, optimizer-vs-closed-form,
+calibration, no-lookahead):
+
+```powershell
+pip install -r requirements-dev.txt
+pytest
+```
 
 ---
 
@@ -200,8 +212,12 @@ Stated up front so they read as deliberate, not missed:
 - [x] Optimizer-convergence sanity check (experiment 04)
 - [x] Final writeup (`report/final_report.md`)
 
-**Headline finding:** on both BTC and AAPL-on-SPY, a one-parameter EWMA
-volatility-scaled Gaussian is the best-calibrated *and* sharpest interval model —
-beating the fixed Gaussian, Laplace, Student-*t*, and empirical baselines. Much
-of the apparent heavy tail in returns is volatility clustering rather than a
-genuine per-observation heavy tail. See the report for the full analysis.
+**Headline finding:** which model calibrates best depends on the asset's tail
+regime. On **BTC** (ν ≈ 2, extreme volatility clustering) a one-parameter EWMA
+volatility-scaled Gaussian is best-calibrated *and* sharpest — the fat tail is
+largely volatility clustering in disguise. On **AAPL-on-SPY** (ν ≈ 3.6, moderate
+tails) a genuine Student-*t* and the non-parametric empirical baseline calibrate
+best across all levels, while volatility scaling alone under-covers at 95%+.
+Disentangling conditional-variance dynamics from genuine per-observation tail
+weight is the point of the two-baseline design. See the report for the full
+analysis.

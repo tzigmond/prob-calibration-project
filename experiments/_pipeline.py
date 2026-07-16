@@ -47,8 +47,10 @@ def run_study(
     sigma = gauss.estimate_scale(resid_tr)
 
     # EWMA σ_t over the full residual series; take the test slice (no lookahead).
+    # Seed σ²_0 from the TRAIN variance only, so the test period is never peeked at.
     resid_full = y - X @ w_g
-    sigma_t = I.ewma_volatility(resid_full)[split:]
+    seed_var = float(np.var(resid_full[:split]))
+    sigma_t = I.ewma_volatility(resid_full, seed_var=seed_var)[split:]
 
     # --- Laplace model (its own weights + scale) ---
     lap = LaplaceLoss()
