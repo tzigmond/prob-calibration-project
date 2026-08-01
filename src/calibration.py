@@ -1,7 +1,7 @@
 """Intervals + actual test values -> the headline numbers.
 
 Coverage is gameable on its own (a wide-enough interval always covers), so it is
-never reported alone — always alongside average width (the sharpness check). And
+never reported alone - always alongside average width (the sharpness check). And
 because the test set is small (~700 points -> ~7 expected violations at 99%),
 every coverage number carries a binomial confidence interval and a Kupiec test,
 so apparent differences aren't read as signal when they're noise.
@@ -33,7 +33,7 @@ def coverage_ci(n: int, covered: int, alpha: float = 0.05) -> tuple[float, float
     ``covered`` of ``n`` test points fell inside the interval. Returns the
     (lo, hi) bounds at confidence 1-alpha. Wilson is used rather than the normal
     approximation because it stays inside [0, 1] and behaves well when the count
-    of misses is tiny — exactly the high-confidence-level regime here.
+    of misses is tiny - exactly the high-confidence-level regime here.
     """
     if n == 0:
         return (float("nan"), float("nan"))

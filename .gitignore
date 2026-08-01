@@ -8,7 +8,7 @@ __pycache__/
 venv/
 .venv/
 
-# Generated build artifacts under results/ (regenerable — keep only the README)
+# Generated build artifacts under results/ (regenerable - keep only the README)
 # cached yfinance pulls and their dated manifests
 results/*.csv
 results/*.meta.json

@@ -1,6 +1,6 @@
 """Everything between raw internet data and a clean (X, y) split chronologically.
 
-Nothing downstream should ever touch yfinance directly — this module is the sole
+Nothing downstream should ever touch yfinance directly - this module is the sole
 boundary. Pulls are cached to results/*.csv so repeated runs work offline and
 survive yfinance outages.
 """
@@ -105,7 +105,7 @@ def build_market_model(
 def chronological_split(
     X: np.ndarray, y: np.ndarray, train_frac: float = 0.8
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Split by time order, NO shuffling — the single enforcement point for the
+    """Split by time order, NO shuffling - the single enforcement point for the
     no-lookahead rule. Returns (X_train, y_train, X_test, y_test)."""
     split = int(len(y) * train_frac)
     return X[:split], y[:split], X[split:], y[split:]

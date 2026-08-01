@@ -1,7 +1,7 @@
 # From Likelihood to Loss
 
 **Do competing error-distribution assumptions change the calibration of
-prediction intervals on financial returns — and does a heavy-tailed model earn
+prediction intervals on financial returns - and does a heavy-tailed model earn
 its keep once volatility clustering is accounted for?**
 
 ---
@@ -13,26 +13,26 @@ maximum likelihood minimizes the negative log-likelihood, which *is* the loss.
 
 **Gaussian.** $p(\varepsilon) \propto \exp(-\varepsilon^2/2\sigma^2)$ gives
 $-\log p = \tfrac{1}{2\sigma^2}\varepsilon^2 + \text{const}$. Summed over the
-sample this is **MSE**, with gradient $\frac{2}{n}X^\top(Xw-y)$ — linear in the
+sample this is **MSE**, with gradient $\frac{2}{n}X^\top(Xw-y)$ - linear in the
 residual, so large errors dominate quadratically.
 
 **Laplace.** $p(\varepsilon) \propto \exp(-|\varepsilon|/b)$ gives
-$-\log p = \tfrac{1}{b}|\varepsilon| + \text{const}$ — **MAE**. The gradient is
+$-\log p = \tfrac{1}{b}|\varepsilon| + \text{const}$ - **MAE**. The gradient is
 $\frac{1}{n}X^\top \operatorname{sign}(Xw-y)$; non-differentiable at zero, where
 we take the subgradient $\operatorname{sign}(0)=0$. Linear penalty ⇒ median-like
 robustness.
 
 **Student-*t*.** $p(\varepsilon) \propto \left(1+\frac{\varepsilon^2}{\nu\sigma^2}\right)^{-(\nu+1)/2}$
 gives a heavy-tailed NLL whose gradient carries the per-residual weight
-$\frac{(\nu+1)\varepsilon}{\nu\sigma^2+\varepsilon^2}$. This weight *redescends* —
-it rises then falls toward zero as $|\varepsilon|\to\infty$ — so extreme residuals
+$\frac{(\nu+1)\varepsilon}{\nu\sigma^2+\varepsilon^2}$. This weight *redescends* -
+it rises then falls toward zero as $|\varepsilon|\to\infty$ - so extreme residuals
 are actively discounted. That robustness is also why the Student-*t* NLL is
 **non-convex in the weights**. As $\nu\to\infty$ the *t* converges to the
 Gaussian and the loss back to MSE.
 
 Each distribution also defines its **interval**: the same likelihood that yields
 MSE yields $\hat{y}\pm z_{1-\alpha/2}\,\sigma$. Getting the distribution wrong
-therefore mis-sizes the interval — which is what we measure.
+therefore mis-sizes the interval - which is what we measure.
 
 ---
 
@@ -44,8 +44,8 @@ coefficients $w^\star=[0.5,-1.2,2.0,0.7]$ and confirmed recovery
 
 | Error law | Optimizer(s) | max │ŵ − w★│ | ν recovery |
 |---|---|---|---|
-| Gaussian | BatchGD / SGD / Momentum / Adam | ≤ 0.048 | — |
-| Laplace | Adam | 0.006 | — |
+| Gaussian | BatchGD / SGD / Momentum / Adam | ≤ 0.048 | - |
+| Laplace | Adam | 0.006 | - |
 | Student-*t* | Adam (ν fixed) | 0.013 | ν̂ = 4.52 vs ν = 4.0 |
 
 All optimizers recover the Gaussian coefficients; the separately-estimated ν
@@ -61,9 +61,9 @@ latest); results are as of the 2026-07 snapshot.*
 
 ## 3. Primary result: BTC-USD daily log returns
 
-Data: BTC-USD 2015–2026, daily log returns, AR(3)+|r| features, chronological
+Data: BTC-USD 2015-2026, daily log returns, AR(3)+|r| features, chronological
 80/20 split (train 3356, test 839). Estimated **ν = 2.07**, residual **excess
-kurtosis = 11.7** — the documented heavy tail is present.
+kurtosis = 11.7** - the documented heavy tail is present.
 
 **Coverage (nominal) / average width, held-out test set:**
 
@@ -79,7 +79,7 @@ Two findings stand out:
 
 1. **The fixed-variance models over-cover and are wide.** The chronological test
    window is calmer than the training era, so a single fixed σ estimated on the
-   training period produces intervals too fat for the test period — the opposite
+   training period produces intervals too fat for the test period - the opposite
    of the naive "heavy tails ⇒ under-coverage" intuition, and a direct
    consequence of holding the variance model fixed across a volatility regime
    shift. The Student-*t* at ν ≈ 2 is the most extreme: its 99% interval is 0.35
@@ -108,7 +108,7 @@ balloons at 99%.*
 ![BTC standardized residuals vs. fitted densities](figures/btc_residual_hist.png)
 
 The *unconditional* residual distribution looks like a *t* with ν ≈ 2 (variance
-barely finite) — exactly what a **Gaussian scale mixture** (a Gaussian whose
+barely finite) - exactly what a **Gaussian scale mixture** (a Gaussian whose
 variance changes over time) produces. That a single EWMA volatility step recovers
 both calibration and sharpness is strong evidence that BTC's fat marginal tail is
 **substantially volatility clustering, not a genuine per-observation heavy tail**.
@@ -119,7 +119,7 @@ both calibration and sharpness is strong evidence that BTC's fat marginal tail i
 
 ### 4.1 Cross-asset: AAPL-on-SPY
 
-Market-model regression of AAPL returns on SPY, 2010–2026 (train 3316, test 830).
+Market-model regression of AAPL returns on SPY, 2010-2026 (train 3316, test 830).
 Estimated **ν = 3.62**, excess kurtosis **7.64**.
 
 | Model | 90% cov (Kupiec) | 95% cov (Kupiec) | 99% cov (Kupiec) | width @95% |
@@ -132,10 +132,10 @@ Estimated **ν = 3.62**, excess kurtosis **7.64**.
 
 **Here the conclusion flips.** On AAPL, the **Student-*t*** and **empirical**
 models are well-calibrated at *every* level (no Kupiec rejection), while the
-EWMA-Gaussian — best on BTC — is well-calibrated only at 90% and **under-covers**
+EWMA-Gaussian - best on BTC - is well-calibrated only at 90% and **under-covers**
 at 95% and 99% (its intervals are too sharp once volatility is scaled out). The
 tail diagnostics explain why: with ν ≈ 3.6, the *t* marginal tail masses (0.046,
-0.014, 0.005) match the empirical ones (0.046, 0.015, 0.006) almost exactly —
+0.014, 0.005) match the empirical ones (0.046, 0.015, 0.006) almost exactly -
 this is a genuine heavy tail, not one manufactured by extreme volatility
 clustering, so getting the *shape* right is what pays off.
 
@@ -181,13 +181,13 @@ it:
 
 - **At 90%, volatility scaling is the most reliable on both datasets.**
   EWMA-Gaussian is the only model with 0/8 rejections at 90% on *both* BTC and
-  AAPL, with 2–3× smaller fold-to-fold variance than any competitor — the most
+  AAPL, with 2-3× smaller fold-to-fold variance than any competitor - the most
   accurate *and* the most stable, independent of the split point.
 - **In the deep tail the two datasets diverge, and do so consistently across all
   folds.** On AAPL the genuine heavy tail means Laplace, Student-*t*, and Empirical
   calibrate the 99% interval in *every* fold (0/8 rejections); on BTC *no* model
-  does — EWMA under-covers (8/8) and the heavy-tailed laws over-cover. The BTC 99%
-  tail wants time-varying scale *and* a heavy conditional tail at once — i.e. GARCH
+  does - EWMA under-covers (8/8) and the heavy-tailed laws over-cover. The BTC 99%
+  tail wants time-varying scale *and* a heavy conditional tail at once - i.e. GARCH
   with a conditional Student-*t* (§7).
 
 ---
@@ -196,7 +196,7 @@ it:
 
 On the convex Gaussian loss, all four from-scratch optimizers reach **identical
 loss** (spread ≈ 6 × 10⁻⁶). The coefficient *weights* differ more (spread ≈ 2 ×
-10⁻²) — not a convergence failure but a property of the problem: daily returns
+10⁻²) - not a convergence failure but a property of the problem: daily returns
 are near-unpredictable, so the coefficients are weakly identified and the loss
 surface is flat in those directions. Loss agreement is the meaningful signal, and
 the headline result is not an Adam artifact.
@@ -204,12 +204,12 @@ the headline result is not an Adam artifact.
 On the Student-*t* loss the weight spread is larger (≈ 0.23) even from a shared
 OLS initialization: the redescending, **non-convex** objective is genuinely more
 sensitive to the optimizer and step size. (An earlier run with the convex-loss
-learning rates let Momentum walk out of the OLS basin entirely — reducing the
+learning rates let Momentum walk out of the OLS basin entirely - reducing the
 rate fixes it, and the residual spread then reflects curvature, not divergence.)
 
 ![Optimizer convergence on a synthetic well-conditioned problem](figures/optimizer_convergence.png)
 
-*Convergence is shown on a synthetic well-conditioned problem — daily returns are
+*Convergence is shown on a synthetic well-conditioned problem - daily returns are
 too weakly predictable for the loss to descend visibly. Full-batch gradient
 descent converges smoothly over ~30 epochs; the mini-batch methods reach the
 optimum within a few.*
@@ -219,12 +219,12 @@ optimum within a few.*
 ## 6. Conclusion
 
 The decisive factor for interval calibration is **not universally shape or
-scale — it depends on the asset's tail regime**, and the study's two-baseline
+scale - it depends on the asset's tail regime**, and the study's two-baseline
 design is what makes the distinction visible:
 
 - **BTC (ν ≈ 2, extreme volatility clustering).** A one-parameter EWMA
-  volatility-scaled Gaussian beats every fixed-variance model — Gaussian,
-  Laplace, Student-*t*, and empirical alike — on both calibration and sharpness.
+  volatility-scaled Gaussian beats every fixed-variance model - Gaussian,
+  Laplace, Student-*t*, and empirical alike - on both calibration and sharpness.
   Most of the apparent heavy tail is volatility clustering in disguise, and a
   genuine heavy-tailed law (ν ≈ 2) over-covers wildly at high confidence.
 - **AAPL (ν ≈ 3.6, moderate tails).** A genuine Student-*t* and the
@@ -232,7 +232,7 @@ design is what makes the distinction visible:
   volatility scaling alone under-covers at 95%+. Here the per-observation tail is
   real, and getting the distributional *shape* right is what matters.
 
-So the falsifiable hypothesis — Student-*t* over fixed Gaussian — holds cleanly on
+So the falsifiable hypothesis - Student-*t* over fixed Gaussian - holds cleanly on
 AAPL but not on BTC, where volatility scaling is the better answer. The right
 model is the one matched to *why* the tail is heavy: conditional-variance
 dynamics (BTC) versus genuine per-observation tail weight (AAPL). Disentangling
@@ -251,8 +251,8 @@ those two was the whole point.
   conflate tail weight with volatility clustering. Estimating ν *conditionally*
   (after volatility scaling) would likely give a larger, better-identified ν.
 - **Fixed variance for four of five models.** Only the EWMA-Gaussian adapts its
-  scale. A full **GARCH** conditional-variance model — combined with a
-  conditional Student-*t* — is the natural next step and would properly separate
+  scale. A full **GARCH** conditional-variance model - combined with a
+  conditional Student-*t* - is the natural next step and would properly separate
   volatility dynamics from residual tail shape. The BTC-vs-AAPL contrast above is
   a strong motivation for it.
 - **ν held fixed, estimated separately.** Joint estimation of ν and the weights

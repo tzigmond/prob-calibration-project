@@ -1,4 +1,4 @@
-# src/ — the library
+# src/ - the library
 
 Reusable, tested building blocks. No script here pulls data or prints a table on
 import; the `experiments/` scripts orchestrate these modules.
@@ -19,7 +19,7 @@ Negative log-likelihoods and their gradients w.r.t. regression weights:
   fixed (ν comes from `data.py` / scipy, not optimized here).
 
 ## train.py
-The generic training loop — the one place that couples a loss to an optimizer,
+The generic training loop - the one place that couples a loss to an optimizer,
 so `losses.py` and `optimizers.py` can stay ignorant of each other. `fit()`
 repeatedly asks `loss.gradient()` for gradients, hands them to `optimizer.step()`,
 records the loss trajectory, and returns fitted weights + convergence history.
@@ -47,12 +47,12 @@ The load-bearing evaluation module:
 Distributional goodness-of-fit checks and the headline calibration visual:
 standardized-residual histograms (x-clipped for readability) with fitted
 densities overlaid, Q-Q plots, tail-probability comparisons P(|z|>2,3,4), and
-`plot_calibration` — the reliability diagram (coverage vs. nominal with binomial
+`plot_calibration` - the reliability diagram (coverage vs. nominal with binomial
 CIs and the perfect-calibration diagonal) alongside a sharpness/width panel.
 
 ## plotstyle.py
-The shared house style — a `use_house_style()` rcParams helper and a per-model
-color `PALETTE` — so every figure reads as one consistent system. Deliberately
+The shared house style - a `use_house_style()` rcParams helper and a per-model
+color `PALETTE` - so every figure reads as one consistent system. Deliberately
 2D: for calibration curves and densities, clean 2D communicates better than 3D.
 
 ## data.py

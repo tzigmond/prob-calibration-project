@@ -1,10 +1,10 @@
-"""Experiment 05 — rolling-origin (walk-forward) robustness.
+"""Experiment 05 - rolling-origin (walk-forward) robustness.
 
 The single-split results in exp 02/03 answer "is the calibration good on one
 held-out window?". This asks the harder question a reviewer will: "is it robust to
 *where* we split?" For each dataset we walk an expanding training window forward,
 re-fit all five models at each step, and evaluate coverage on the next block. If a
-conclusion is real it should hold across folds, not just one — and we run it on
+conclusion is real it should hold across folds, not just one - and we run it on
 BOTH datasets so BTC and AAPL get the same single-split and cross-split treatment.
 """
 from __future__ import annotations
@@ -99,7 +99,7 @@ def run_rolling(X: np.ndarray, y: np.ndarray, dataset_name: str, epochs: int = 2
         ax.set_title(f"{dataset_name}: {int(lv * 100)}% coverage across folds")
         ax.set_xticks(folds)
     axes[1].legend(title="model", bbox_to_anchor=(1.02, 1), loc="upper left")
-    fig.suptitle(f"Rolling-origin calibration robustness — {dataset_name}",
+    fig.suptitle(f"Rolling-origin calibration robustness - {dataset_name}",
                  fontsize=15, fontweight="bold")
     fig.tight_layout()
     FIGURES.mkdir(parents=True, exist_ok=True)
@@ -113,12 +113,12 @@ def run_rolling(X: np.ndarray, y: np.ndarray, dataset_name: str, epochs: int = 2
 def main(refresh: bool = False):
     cache = not refresh
 
-    # BTC — AR(3) + |r| features on daily log returns.
+    # BTC - AR(3) + |r| features on daily log returns.
     btc = D.compute_log_returns(D.fetch_prices("BTC-USD", "2015-01-01", END, use_cache=cache)["Close"])
     Xb, yb = D.build_ar_features(btc, lags=3)
     run_rolling(Xb, yb, "BTC")
 
-    # AAPL-on-SPY — market-model regression, residual = idiosyncratic return.
+    # AAPL-on-SPY - market-model regression, residual = idiosyncratic return.
     aapl = D.compute_log_returns(D.fetch_prices("AAPL", "2010-01-01", END, use_cache=cache)["Close"])
     spy = D.compute_log_returns(D.fetch_prices("SPY", "2010-01-01", END, use_cache=cache)["Close"])
     Xa, ya = D.build_market_model(aapl, spy)

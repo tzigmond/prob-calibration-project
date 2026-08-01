@@ -59,7 +59,7 @@ class LaplaceLoss(Loss):
 
     def gradient(self, X, y, w):
         r = X @ w - y
-        # np.sign gives sign(0) == 0 — exactly the subgradient choice we want.
+        # np.sign gives sign(0) == 0 - exactly the subgradient choice we want.
         return (1.0 / len(y)) * (X.T @ np.sign(r))
 
     def estimate_scale(self, residuals):
@@ -72,7 +72,7 @@ class StudentTLoss(Loss):
 
     Gradient is w.r.t. weights only; nu comes from ``estimate_nu`` and is frozen.
     The per-residual weighting (nu+1) * r / (nu*scale**2 + r**2) is the
-    redescending influence that makes this robust — and non-convex in w.
+    redescending influence that makes this robust - and non-convex in w.
     """
 
     def __init__(self, nu: float, scale: float = 1.0):
@@ -100,7 +100,7 @@ def estimate_nu(residuals: np.ndarray) -> float:
 
     Called once on OLS residuals before the Student-t model is trained; the
     returned nu is then baked into ``StudentTLoss(nu=...)`` and held fixed.
-    Keep df only here — scale is re-estimated per model via ``estimate_scale``.
+    Keep df only here - scale is re-estimated per model via ``estimate_scale``.
     """
     df, _, _ = stats.t.fit(residuals)
     return float(df)

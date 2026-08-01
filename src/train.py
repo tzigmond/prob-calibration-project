@@ -1,4 +1,4 @@
-"""The generic training loop — the seam where a loss meets an optimizer.
+"""The generic training loop - the seam where a loss meets an optimizer.
 
 This is the ONLY module that knows about both interfaces at once, which is what
 lets ``losses.py`` and ``optimizers.py`` stay ignorant of each other. Every
@@ -21,7 +21,7 @@ class FitResult:
 
 
 def _ols_init(X: np.ndarray, y: np.ndarray) -> np.ndarray:
-    """Least-squares solution — the shared starting point for all optimizers so
+    """Least-squares solution - the shared starting point for all optimizers so
     the non-convex Student-t fits are comparable."""
     w, *_ = np.linalg.lstsq(X, y, rcond=None)
     return w
@@ -47,7 +47,7 @@ def fit(
     ``w_init`` defaults to the OLS solution so non-convex Student-t fits are
     comparable across optimizers. ``tol`` optionally early-stops on the absolute
     change in full-dataset loss between epochs. ``seed`` makes mini-batch
-    shuffling reproducible — pass it for any batched run you want to repeat.
+    shuffling reproducible - pass it for any batched run you want to repeat.
     """
     w = _ols_init(X, y) if w_init is None else np.array(w_init, dtype=float)
     optimizer.reset()

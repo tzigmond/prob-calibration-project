@@ -1,4 +1,4 @@
-"""Experiment 04 — optimizer convergence sanity check.
+"""Experiment 04 - optimizer convergence sanity check.
 
 Runs all four from-scratch optimizers against the Gaussian loss on BTC data and
 confirms they converge to consistent coefficients (a convex problem, so they
@@ -6,7 +6,7 @@ should agree). Also fits the Student-t loss to illustrate the caveat: its NLL is
 non-convex in the weights, so different optimizers can settle at slightly
 different points from the same OLS start.
 
-This is a sanity check, not a second experiment — it confirms the headline result
+This is a sanity check, not a second experiment - it confirms the headline result
 isn't an artifact of choosing Adam. The convergence *trajectory* is plotted on a
 synthetic well-conditioned problem, because daily returns are too weakly
 predictable for the loss to show a meaningful descent.
@@ -48,7 +48,7 @@ def main():
         "Adam":     O.Adam(lr=0.01),
     }
 
-    print("Gaussian loss (convex) — optimizers should converge to the same weights:")
+    print("Gaussian loss (convex) - optimizers should converge to the same weights:")
     # Initialize AWAY from the optimum (default init is OLS, i.e. already minimal)
     # so the convergence trace shows an actual descent to compare.
     w0 = np.zeros(Xtr.shape[1])
@@ -79,7 +79,7 @@ def main():
     # lets an optimizer walk away from the OLS basin entirely. With gentler rates
     # and a shared OLS init, the remaining disagreement reflects the objective's
     # curvature, not divergence.
-    print("\nStudent-t loss (non-convex) — gentler rates, shared OLS init:")
+    print("\nStudent-t loss (non-convex) - gentler rates, shared OLS init:")
     w_ols = np.linalg.lstsq(Xtr, ytr, rcond=None)[0]
     resid_ols = ytr - Xtr @ w_ols
     nu = estimate_nu(resid_ols)
@@ -104,7 +104,7 @@ def main():
     # Convergence-trajectory plot on a WELL-CONDITIONED SYNTHETIC problem.
     # Daily returns carry almost no predictable signal, so the Gaussian loss is
     # nearly flat in the weights (predicting zero is almost as good as the
-    # optimum) — a descent curve is only meaningful where the optimum sits far
+    # optimum) - a descent curve is only meaningful where the optimum sits far
     # from the origin. This isolates optimizer *speed*, which the BTC checks
     # above (agreement at the optimum) cannot show.
     print("\nConvergence trajectory plotted on a synthetic well-conditioned problem\n"
@@ -140,7 +140,7 @@ def main():
     ax.set_yscale("log")
     ax.set_xlabel("epoch")
     ax.set_ylabel("Gaussian loss (MSE)")
-    ax.set_title("Optimizer convergence — synthetic well-conditioned problem")
+    ax.set_title("Optimizer convergence - synthetic well-conditioned problem")
     ax.legend(title="optimizer")
     out = FIGURES / "optimizer_convergence.png"
     fig.savefig(out)

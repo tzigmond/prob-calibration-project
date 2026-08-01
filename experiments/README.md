@@ -1,4 +1,4 @@
-# experiments/ — runnable scripts
+# experiments/ - runnable scripts
 
 Each script is an entry point that wires together `src/` modules, runs one piece
 of the study, and writes figures to `results/figures/` and tables to

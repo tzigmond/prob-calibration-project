@@ -1,4 +1,4 @@
-"""Experiment 03 — AAPL-on-SPY robustness check.
+"""Experiment 03 - AAPL-on-SPY robustness check.
 
 Re-run the same calibration pipeline on a different, more canonical setup: a
 market-model regression of AAPL returns on SPY returns, where the residual is the
@@ -41,7 +41,7 @@ def main(refresh: bool = False):
     table.to_csv(TABLES / "aapl_coverage.csv")
     tails.to_csv(TABLES / "aapl_tail_probabilities.csv")
 
-    print(f"AAPL-on-SPY idiosyncratic returns — train {meta['n_train']}, test {meta['n_test']}")
+    print(f"AAPL-on-SPY idiosyncratic returns - train {meta['n_train']}, test {meta['n_test']}")
     print(f"Estimated nu = {meta['nu']:.2f}   residual excess kurtosis = {meta['excess_kurtosis']:.2f}\n")
     print("Coverage / width table (nominal 90/95/99%):")
     print(table.round(3).to_string())

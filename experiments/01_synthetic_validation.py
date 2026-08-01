@@ -1,4 +1,4 @@
-"""Experiment 01 — synthetic validation (the gate before real data).
+"""Experiment 01 - synthetic validation (the gate before real data).
 
 Generate data from known Gaussian, Laplace, and Student-t(ν) distributions with
 known true coefficients, then confirm:
@@ -6,7 +6,7 @@ known true coefficients, then confirm:
   * the Laplace and Student-t losses recover their weights under Adam,
   * nu estimated separately from OLS residuals matches the true nu.
 
-If this fails, the math is wrong — nothing downstream is trustworthy.
+If this fails, the math is wrong - nothing downstream is trustworthy.
 """
 from __future__ import annotations
 
@@ -48,19 +48,19 @@ def main():
     n = len(X)
     ok = True
 
-    print("Gaussian errors — every optimizer should recover w_true:")
+    print("Gaussian errors - every optimizer should recover w_true:")
     y = X @ w_true + rng.normal(0, 0.5, n)
     for opt in [O.BatchGD(lr=0.1), O.SGD(lr=0.05), O.Momentum(lr=0.05), O.Adam(lr=0.05)]:
         bs = None if isinstance(opt, O.BatchGD) else 256
         w = fit(X, y, GaussianLoss(), opt, epochs=500, batch_size=bs, seed=0).weights
         ok &= check(type(opt).__name__, w_true, w)
 
-    print("\nLaplace errors — Adam under MAE:")
+    print("\nLaplace errors - Adam under MAE:")
     y = X @ w_true + rng.laplace(0, 0.4, n)
     w = fit(X, y, LaplaceLoss(), O.Adam(lr=0.02), epochs=1000, seed=0).weights
     ok &= check("Adam", w_true, w)
 
-    print("\nStudent-t errors — estimate nu separately, hold fixed, recover weights:")
+    print("\nStudent-t errors - estimate nu separately, hold fixed, recover weights:")
     nu_true = 4.0
     y = X @ w_true + stats.t.rvs(df=nu_true, scale=0.4, size=n, random_state=1)
     w_ols = np.linalg.lstsq(X, y, rcond=None)[0]

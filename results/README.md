@@ -1,7 +1,7 @@
-# results/ — generated output
+# results/ - generated output
 
 Everything here is produced by the `experiments/` scripts and is reproducible
-from source — treat it as build output, not hand-edited.
+from source - treat it as build output, not hand-edited.
 
 ## figures/
 Plots for the report: standardized-residual histograms with fitted densities,

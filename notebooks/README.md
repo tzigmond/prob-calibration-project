@@ -1,6 +1,6 @@
-# notebooks/ — exploratory work
+# notebooks/ - exploratory work
 
-Scratch space for interactive exploration — not part of the reproducible
+Scratch space for interactive exploration - not part of the reproducible
 pipeline. Anything that becomes a real result should be moved into a `src/`
 module (tested) and driven from an `experiments/` script.
 

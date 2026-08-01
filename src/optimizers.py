@@ -1,6 +1,6 @@
 """From-scratch gradient-descent optimizers.
 
-All four expose the same interface — ``step(params, grads) -> params`` — so the
+All four expose the same interface - ``step(params, grads) -> params`` - so the
 training loop and experiments can swap them freely. Optimizers know NOTHING about
 the loss; they only ever exchange parameter and gradient vectors. This is what
 keeps the 4-optimizers x 3-losses grid clean.

@@ -1,11 +1,11 @@
-"""Experiment 02 — the core BTC result.
+"""Experiment 02 - the core BTC result.
 
 Pull BTC-USD, build AR(3)+|r| features on daily log returns, split chronologically,
 fit the five models, and produce the centerpiece coverage/width table (with
 binomial CIs and Kupiec p-values) plus residual diagnostics.
 
 The question this answers: do heavy-tailed and volatility-aware models produce
-better-calibrated intervals than a fixed-variance Gaussian — and does any
+better-calibrated intervals than a fixed-variance Gaussian - and does any
 Student-t advantage survive the EWMA-Gaussian and empirical baselines?
 """
 from __future__ import annotations
@@ -43,7 +43,7 @@ def main(refresh: bool = False):
     table.to_csv(TABLES / "btc_coverage.csv")
     tails.to_csv(TABLES / "btc_tail_probabilities.csv")
 
-    print(f"BTC daily log returns — train {meta['n_train']}, test {meta['n_test']}")
+    print(f"BTC daily log returns - train {meta['n_train']}, test {meta['n_test']}")
     print(f"Estimated nu = {meta['nu']:.2f}   residual excess kurtosis = {meta['excess_kurtosis']:.2f}\n")
     print("Coverage / width table (nominal 90/95/99%):")
     print(table.round(3).to_string())

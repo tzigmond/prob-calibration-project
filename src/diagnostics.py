@@ -127,7 +127,7 @@ def plot_calibration(table: pd.DataFrame, dataset_name: str, save_path: str) -> 
     ax2.set_title(f"{dataset_name}: sharpness (narrower is better)")
     ax2.legend(title="model")
 
-    fig.suptitle(f"Interval calibration — {dataset_name}", fontsize=15, fontweight="bold")
+    fig.suptitle(f"Interval calibration - {dataset_name}", fontsize=15, fontweight="bold")
     fig.tight_layout()
     fig.savefig(save_path)
     plt.close(fig)

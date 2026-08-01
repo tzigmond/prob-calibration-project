@@ -2,13 +2,13 @@
 
 Given fitted predictions and the distribution's fitted scale (and nu for
 Student-t), produce lower/upper bound arrays at a nominal ``level``. The
-parametric builders consume the scale estimates produced in ``losses.py`` —
+parametric builders consume the scale estimates produced in ``losses.py`` -
 closing the loop from "the assumption that defined the loss" to "the interval
 that assumption implies."
 
 Five models total:
   1. gaussian_interval              (fixed σ)
-  2. ewma_scaled_gaussian_interval  (time-varying σ_t via EWMA — the
+  2. ewma_scaled_gaussian_interval  (time-varying σ_t via EWMA - the
      heteroskedasticity control that tests whether the fat tail is just
      volatility clustering in disguise)
   3. laplace_interval
@@ -44,7 +44,7 @@ def ewma_volatility(
 ) -> np.ndarray:
     """Trailing RiskMetrics EWMA volatility, one σ_t per point.
 
-    σ²_t = lam * σ²_{t-1} + (1 - lam) * series_{t-1}²  — each σ_t depends only on
+    σ²_t = lam * σ²_{t-1} + (1 - lam) * series_{t-1}²  - each σ_t depends only on
     values strictly before t, so there is no lookahead. ``lam=0.94`` is the daily
     RiskMetrics default. ``series`` is returns or residuals.
 
@@ -93,8 +93,8 @@ def empirical_interval(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Model 5: non-parametric historical simulation.
 
-    Take the empirical central-``level`` quantiles of the TRAIN residuals — no
-    distributional assumption — and add them to each prediction. The baseline
+    Take the empirical central-``level`` quantiles of the TRAIN residuals - no
+    distributional assumption - and add them to each prediction. The baseline
     that answers "does the parametric assumption even matter, versus just using
     the right empirical quantiles?"
     """

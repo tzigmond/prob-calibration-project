@@ -1,7 +1,7 @@
 """A single house style so every figure reads as one consistent system.
 
 Deliberately 2D. For calibration curves, densities, and convergence traces, clean
-2D with a shared palette communicates far better than 3D — no occlusion, honest
+2D with a shared palette communicates far better than 3D - no occlusion, honest
 axes, and a reviewer can read values directly off the plot.
 """
 from __future__ import annotations
@@ -28,7 +28,7 @@ _INK = "#333333"
 
 
 def use_house_style() -> None:
-    """Apply the shared matplotlib rcParams. Idempotent — safe to call per figure."""
+    """Apply the shared matplotlib rcParams. Idempotent - safe to call per figure."""
     import matplotlib as mpl
 
     mpl.rcParams.update({
